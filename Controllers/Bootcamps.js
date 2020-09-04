@@ -3,17 +3,22 @@ const ErrorResponse = require('./../utils/errorResponse')
 const asyncHandler = require('../Middlewares/async')
 const geocoder = require('../utils/geocoder')
 
-//@desc         GET ALL BOOTCAMPS
-//@route        GET /api/v1/bootcamps
+//@desc         GET ALL BOOTCAMPS WITH ADVANCE FILTERING
+//@route        GET /api/v1/bootcamps/...
 //@access       Public
 exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
-    const allBootcamps = await Bootcamp.find();
+    let query;
+    let queryStr = JSON.stringify(req.query)
+    queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
+    query = Bootcamp.find(JSON.parse(queryStr));
+    const allBootcamps = await query;
     return res.status(200).json({
         success: true,
         count: allBootcamps.length,
         data: allBootcamps
     });
 });
+
 
 //@desc         GET A SINGLE BOOTCAMP
 //@route        GET /api/v1/bootcamps/:id
