@@ -5,6 +5,8 @@ const morgan = require('morgan')
 const connectDB = require('./config/db')
 const colors = require('colors');
 const errorHandler = require('./Middlewares/error')
+const expressFileUpload = require('express-fileupload');
+const path = require('path');
 //Load env vars
 dotenv.config({ path: './config/config.env' })
 
@@ -19,6 +21,10 @@ const PORT = process.env.PORT || 5000
 if (process.env.NODE_ENV === 'development')
     app.use(morgan('dev'))
 
+//File uploading
+app.use(expressFileUpload());
+
+app.use(express.static(path.join(__dirname, 'public')))
 //using the custom logger middleware 
 //app.use(logger)
 

@@ -2,6 +2,8 @@ const Bootcamp = require('./../Models/Bootcamp')
 const ErrorResponse = require('./../utils/errorResponse')
 const asyncHandler = require('../Middlewares/async')
 const geocoder = require('../utils/geocoder')
+const path = require('path');
+const fs = require('fs');
 
 //@desc         GET ALL BOOTCAMPS WITH ADVANCE FILTERING
 //@route        GET /api/v1/bootcamps/...
@@ -185,6 +187,56 @@ exports.getBootcampsInRadius = asyncHandler(async (req, res, next) => {
         success: true,
         count: bootcamps.length,
         data: bootcamps
+    })
+
+});
+
+
+//@desc         UPLOAD PHOTO FOR BOOTCAMP
+//@route        PUT /api/v1/bootcamps/:id/photo
+//@access       Private
+exports.bootcampUploadPhoto = asyncHandler(async (req, res, next) => {
+    // let dirName = path.normalize('/public/uploads');
+    // if (!fs.existsSync(dirName)) {
+    //     fs.mkdirSync(dirName)
+    // }
+    const ID = req.params.id;
+    const bootcamp = await Bootcamp.findById(ID);
+    if (!bootcamp) {
+        return next(new ErrorResponse(`Bootcamp not found with Id of ${ID}`, 404));
+    }
+    if (!req.files) {
+        return next(new ErrorResponse(`Please upload a file`, 400));
+    }
+
+    const file = req.files.file
+
+    //Make sure the uploaded file is a photo
+    if (!file.mimetype.startsWith('image')) {
+        return next(new ErrorResponse(`Please upload an image file`, 400));
+
+    }
+
+    //Check file size
+    if (file.size > process.env.MAX_FILE_UPLOAD) {
+        return next(new ErrorResponse(`Please upload an image file of size less than ${process.env.MAX_FILE_UPLOAD}`, 400));
+    }
+
+    //Create custom file name
+    file.name = `photo_${bootcamp._id}${path.parse(file.name).ext}`
+
+    file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async err => {
+        if (err) {
+            console.error(err)
+            return next(new ErrorResponse(`Problem with file upload`, 500));
+        }
+
+        await Bootcamp.findByIdAndUpdate(req.params.id, { photo: file.name })
+        res.status(200).json({
+            success: true,
+            message: 'Photo uploaded successfully',
+            data: file.name
+        });
     })
 
 });
